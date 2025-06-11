@@ -3,8 +3,8 @@ from supabase import create_client, Client
 import re
 
 # Supabase config
-SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co"
-SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY"
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Session state
