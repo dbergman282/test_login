@@ -7,43 +7,37 @@ import re
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
-# Create the client
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-# Session state
+
 if "user" not in st.session_state:
     st.session_state.user = None
 
-# ------------------------------
-# Utility: Password validation
-# ------------------------------
+# Password rules: 8+ chars, at least 1 special character
 def is_valid_password(password: str) -> bool:
     return len(password) >= 8 and re.search(r"[^a-zA-Z0-9]", password)
 
-# ------------------------------
-# Sign-Up
-# ------------------------------
+# Sign up page
 def sign_up():
-    st.subheader("🆕 Create an Account")
+    st.subheader("🆕 Sign Up")
     email = st.text_input("Email", key="signup_email")
     password = st.text_input("Password", type="password", key="signup_password")
 
-    if st.button("Sign Up"):
+    if st.button("Create Account"):
         if not is_valid_password(password):
-            st.error("Password must be at least 8 characters and include a special character.")
+            st.error("Password must be at least 8 characters and contain a special character.")
             return
-
         try:
             res = supabase.auth.sign_up({
                 "email": email,
                 "password": password
             })
-            st.success("🎉 Almost there! Check your email to confirm your address before logging in.")
+            if res.user:
+                st.success("Check your email to confirm before logging in.")
         except Exception as e:
             st.error(f"Sign-up failed: {e}")
 
-# ------------------------------
-# Log In
-# ------------------------------
+# Login page
 def login():
     st.subheader("🔐 Log In")
     email = st.text_input("Email", key="login_email")
@@ -57,41 +51,34 @@ def login():
             })
             if res.user:
                 st.session_state.user = res.user
-                st.success("✅ Logged in!")
+                st.success("Logged in!")
                 st.experimental_rerun()
         except Exception as e:
-            st.error("Login failed. Have you confirmed your email or reset your password?")
+            st.error("Login failed. Confirm your email or reset your password.")
 
-# ------------------------------
-# Forgot Password
-# ------------------------------
+# Forgot password page
 def forgot_password_page():
-    st.subheader("🔑 Forgot Your Password?")
-    st.write("Enter your email to receive a link to reset your password.")
-
-    email = st.text_input("Email", key="forgot_email")
+    st.subheader("🔑 Forgot Password?")
+    email = st.text_input("Enter your email")
 
     if st.button("Send Reset Email"):
         if not email:
-            st.error("Please enter your email address.")
+            st.error("Please enter your email.")
             return
-
         try:
             supabase.auth.reset_password_email(email)
-            st.success("📬 Check your inbox and click the link to reset your password. Then return here and log in with the new password.")
+            st.success("📬 Check your email. Supabase will let you set a new password.")
         except Exception as e:
             st.error(f"Failed to send reset email: {e}")
 
-# ------------------------------
-# Logged-In Area
-# ------------------------------
+# Main app (after login)
 def main_app():
     st.subheader("🏠 Welcome!")
-    st.write(f"You're logged in as **{st.session_state.user['email']}**.")
+    st.write(f"You are logged in as: **{st.session_state.user['email']}**")
 
     with st.expander("🔒 Change Password"):
         new_pw = st.text_input("New Password", type="password", key="new_pw")
-        confirm_pw = st.text_input("Confirm New Password", type="password", key="confirm_pw")
+        confirm_pw = st.text_input("Confirm Password", type="password", key="confirm_pw")
 
         if st.button("Change Password"):
             if new_pw != confirm_pw:
@@ -101,19 +88,16 @@ def main_app():
             else:
                 try:
                     supabase.auth.update_user({"password": new_pw})
-                    st.success("Password changed successfully!")
+                    st.success("Password updated successfully.")
                 except Exception as e:
-                    st.error(f"Error: {e}")
+                    st.error(f"Error updating password: {e}")
 
-    if st.button("Logout"):
+    if st.button("Log Out"):
         st.session_state.user = None
         st.experimental_rerun()
 
-# ------------------------------
-# App Entry Point
-# ------------------------------
+# App router
 st.set_page_config(page_title="Secure App", page_icon="🔐")
-
 st.title("🔐 Streamlit + Supabase Auth")
 
 if st.session_state.user:
