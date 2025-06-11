@@ -3,7 +3,12 @@ from supabase import create_client, Client
 import re
 
 
+# Load Supabase credentials from Streamlit secrets
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
+# Create the client
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Session state
 if "user" not in st.session_state:
     st.session_state.user = None
